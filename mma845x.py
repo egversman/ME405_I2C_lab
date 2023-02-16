@@ -146,9 +146,11 @@ class MMA845x:
         """! Get the X acceleration from the accelerometer in A/D bits and 
         return it.
         @return The measured X acceleration in A/D conversion bits """
-
-        print ('MMA845x clueless about X acceleration')
-        return 0
+        buffer = bytearray() * 2;
+        self.i2c.mem_read(buffer, self.addr, OUT_X_MSB)
+        ax_bits = int.from_bytes(buffer, "big", True)
+        # print ('MMA845x clueless about X acceleration')
+        return ax_bits
 
 
     def get_ay_bits (self):
