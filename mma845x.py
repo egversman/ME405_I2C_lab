@@ -9,6 +9,7 @@ an exercise in a mechatronics course.
 """
 
 import micropython
+import pyb
 
 
 ## The register address of the STATUS register in the MMA845x
@@ -137,18 +138,19 @@ class MMA845x:
         be made, one must call @c active(). """
 
         if self._works:
-            reg1 = ord (self._i2c.mem_read (1, self._addr, CTRL_REG1))
+            reg1 = ord (self.i2c.mem_read (1, self.addr, CTRL_REG1)) #NOTE UNDERSCORES _addr
             reg1 &= ~0x01
-            self._i2c.mem_write (chr (reg1 & 0xFF), self._addr, CTRL_REG1)
+            self.i2c.mem_write (chr (reg1 & 0xFF), self.addr, CTRL_REG1) #SAMEEE
 
 
     def get_ax_bits (self):
         """! Get the X acceleration from the accelerometer in A/D bits and 
         return it.
         @return The measured X acceleration in A/D conversion bits """
-        buffer = bytearray() * 2;
+        buffer = bytearray(2);
         self.i2c.mem_read(buffer, self.addr, OUT_X_MSB)
         ax_bits = int.from_bytes(buffer, "big", True)
+
         # print ('MMA845x clueless about X acceleration')
         return ax_bits
 
@@ -157,9 +159,10 @@ class MMA845x:
         """! Get the Y acceleration from the accelerometer in A/D bits and 
         return it.
         @return The measured Y acceleration in A/D conversion bits """
+        ay_bits = int.from_bytes(self.i2c.mem_read(2, self.addr, OUT_Y_MSB), "big", True)
 
-        print ('MMA845x clueless about Y acceleration')
-        return 0
+        # print ('MMA845x clueless about X acceleration')
+        return ay_bits
 
 
     def get_az_bits (self):
@@ -167,17 +170,21 @@ class MMA845x:
         return it.
         @return The measured Z acceleration in A/D conversion bits """
 
-        print ('MMA845x clueless about Z acceleration')
-        return 0
+        az_bits = int.from_bytes(self.i2c.mem_read(2, self.addr, OUT_Z_MSB, addr_size=16), "big", True)
+        return az_bits
 
 
     def get_ax (self):
         """! Get the X acceleration from the accelerometer in g's, assuming
         that the accelerometer was correctly calibrated at the factory.
         @return The measured X acceleration in g's """
-
-        print ('MMA845x uncalibrated X')
-        return 0
+        
+        ax_bits = self.get_ax_bits()
+        if ax_bits >2**15:
+            ax_bits -= 2**16
+        ax = ax_bits/16000 #divide by a factor here to get approximation
+        
+        return ax
 
 
     def get_ay (self):
@@ -225,5 +232,17 @@ class MMA845x:
 
             return diag_str
 
+if __name__ == "__main__":
+    
+    name = MMA845x(pyb.I2C(1, pyb.I2C.CONTROLLER), 29)
+    name.active() #super important!!!
+#     print('X bit accel = ', name.get_ax_bits())
+#     print('Y bit accel = ', name.get_ay_bits())
+#     print('Z bit accel = ', name.get_az_bits())
+    
+    print('X accel = ',name.get_ax())
+    
 
+    
+    
 

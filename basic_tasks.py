@@ -14,6 +14,7 @@ import gc
 import pyb
 import cotask
 import task_share
+import mma845x
 
 
 def task1_fun(shares):
@@ -23,13 +24,13 @@ def task1_fun(shares):
     """
     # Get references to the share and queue which have been passed to this task
     my_share, my_queue = shares
+    accel = mma845x.MMA845x(pyb.I2C(1, pyb.I2C.CONTROLLER), 29)
+    
 
-    counter = 0
+
     while True:
-        my_share.put(counter)
-        my_queue.put(counter)
-        counter += 1
-
+        a_x = accel.get_ax()
+        my_queue.put(a_x)
         yield 0
 
 
@@ -40,6 +41,7 @@ def task2_fun(shares):
     """
     # Get references to the share and queue which have been passed to this task
     the_share, the_queue = shares
+    
 
     while True:
         # Show everything currently in the queue and the value in the share
