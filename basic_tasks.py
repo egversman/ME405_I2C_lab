@@ -23,14 +23,14 @@ def task1_fun(shares):
     @param shares A list holding the share and queue used by this task
     """
     # Get references to the share and queue which have been passed to this task
-    my_share, my_queue = shares
+    my_queue = shares
     accel = mma845x.MMA845x(pyb.I2C(1, pyb.I2C.CONTROLLER), 29)
-    
+    accel.active()
 
 
     while True:
-        a_x = accel.get_ax()
-        my_queue.put(a_x)
+        ax = accel.get_ax()
+        my_queue.put(ax)
         yield 0
 
 
@@ -40,15 +40,16 @@ def task2_fun(shares):
     @param shares A tuple of a share and queue from which this task gets data
     """
     # Get references to the share and queue which have been passed to this task
-    the_share, the_queue = shares
+    the_queue = shares
     
 
     while True:
         # Show everything currently in the queue and the value in the share
-        print(f"Share: {the_share.get ()}, Queue: ", end='')
+        
         while q0.any():
-            print(f"{the_queue.get ()} ", end='')
-        print('')
+            print(f"Queue: ", end='')
+            print(f"{the_queue.get ()} \r\n", end='')
+      
 
         yield 0
 
@@ -61,18 +62,19 @@ if __name__ == "__main__":
           "Press Ctrl-C to stop and show diagnostics.")
 
     # Create a share and a queue to test function and diagnostic printouts
-    share0 = task_share.Share('h', thread_protect=False, name="Share 0")
-    q0 = task_share.Queue('L', 16, thread_protect=False, overwrite=False,
+    q0 = task_share.Queue('f', 16, thread_protect=False, overwrite=False,
                           name="Queue 0")
+    #q1 = task_share.Queue('L', 16, thread_protect=False, overwrite=False,
+    #                      name="Queue 1")
 
     # Create the tasks. If trace is enabled for any task, memory will be
     # allocated for state transition tracing, and the application will run out
     # of memory after a while and quit. Therefore, use tracing only for 
     # debugging and set trace to False when it's not needed
-    task1 = cotask.Task(task1_fun, name="Task_1", priority=1, period=400,
-                        profile=True, trace=False, shares=(share0, q0))
-    task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=1500,
-                        profile=True, trace=False, shares=(share0, q0))
+    task1 = cotask.Task(task1_fun, name="Task_1", priority=1, period=500,
+                        profile=True, trace=False, shares=(q0))
+    task2 = cotask.Task(task2_fun, name="Task_2", priority=2, period=100,
+                        profile=True, trace=False, shares=(q0))
     cotask.task_list.append(task1)
     cotask.task_list.append(task2)
 
